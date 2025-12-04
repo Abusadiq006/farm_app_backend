@@ -5,7 +5,10 @@ const { loginUser } = require('../controllers/authController')
 const auth = require('../middleware/authMiddleware')
 const role = require('../middleware/roleMiddleware')
 
-const router = express.Router()
+const router = require('express').Router()
+const {forgotPassword} = require('../controllers/forgotPassword')
+const {verifyOtp} = require('../controllers/verifyOtp')
+const {resetPassword} = require('../controllers/resetPassword')
 
 // PROTECTED ROUTES
 
@@ -24,6 +27,11 @@ router.get('/profile', auth, (req,res)=>{
     user:req.user
   })
 })
+
+// PASSWORD
+router.post('/forgot-password', forgotPassword)
+router.post('/verify-otp', verifyOtp)
+router.post('/reset-password', resetPassword)
 
 // REGISTER
 router.post('/register', async(req,res)=>{
