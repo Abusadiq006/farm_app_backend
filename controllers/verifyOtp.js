@@ -1,17 +1,23 @@
+// verifyOtp.js
 const crypto=require('crypto')
 const Otp=require('../models/otpModel')
 
 exports.verifyOtp=async(req,res)=>{
  try{
   const{email,otp}=req.body
-
+  
+  // CRITICAL LINE: Hashing the received plain text OTP
   const hashedOtp=crypto.createHash('sha256').update(otp).digest('hex')
 
-  const existing=await Otp.findOne({email,otp:hashedOtp})
+
+  // Query DB using BOTH email and the new HASH
+  const existing=await Otp.findOne({email,otp:hashedOtp}) 
   if(!existing)return res.status(400).json({message:'Invalid OTP'})
 
-  if(existing.expiresAt<Date.now()){
-   return res.status(400).json({message:'OTP expired'})
+  if(existing.expiresAt < Date.now()){
+    // If expired, clear the record
+    await Otp.deleteOne({ email })
+    return res.status(400).json({message:'OTP expired'})
   }
 
   existing.verified=true

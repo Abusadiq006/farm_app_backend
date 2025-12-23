@@ -1,44 +1,80 @@
-const Transaction=require('../models/transactionModel')
-const{initializePayment,verifyPayment}=require('../utils/paystack')
+const Transaction = require('../models/transactionModel');
+const { initializePayment, verifyPayment } = require('../utils/paystack');
 
-exports.initPayment=async(req,res)=>{
- try{
-  const{email,amount}=req.body
+// 1. Initialize Payment
+exports.initPayment = async (req, res) => {
+    try {
+        const { email, amount } = req.body;
 
-  const data={email,amount:amount*100} // convert to kobo
+        // Validation
+        if (!email || !amount) {
+            return res.status(400).json({ message: "Email and amount are required" });
+        }
 
-  const paystackRes=await initializePayment(data)
-  if(paystackRes.error)return res.status(400).json(paystackRes.error)
+        const data = {
+            email,
+            amount: amount * 100, // Paystack works in Kobo
+            callback_url: 'http://localhost:5173/payment-success'
+        };
 
-  await Transaction.create({
-   email,
-   amount,
-   reference:paystackRes.data.reference
-  })
+        // Call Paystack Utility
+        const paystackRes = await initializePayment(data);
+        
+        if (paystackRes.error) {
+            return res.status(400).json({ message: "Paystack initialization failed", error: paystackRes.error });
+        }
 
-  return res.json({authorization_url:paystackRes.data.authorization_url})
- }catch(err){
-  return res.status(500).json({message:'Server error',error:err.message})
- }
-}
+        // Save transaction to Database with "pending" status
+        await Transaction.create({
+            email,
+            amount,
+            reference: paystackRes.data.reference,
+            status: 'pending' 
+        });
 
-exports.verifyPay=async(req,res)=>{
- try{
-  const{reference}=req.params
+        // Return the URL for the frontend to redirect the user
+        return res.json({ 
+            authorization_url: paystackRes.data.authorization_url 
+        });
 
-  const paystackRes=await verifyPayment(reference)
-  if(paystackRes.error)return res.status(400).json(paystackRes.error)
+    } catch (err) {
+        console.error("Init Error:", err.message);
+        return res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
 
-  const status=paystackRes.data.status
+// 2. Verify Payment
+exports.verifyPay = async (req, res) => {
+    try {
+        const { reference } = req.params;
 
-  const trx=await Transaction.findOne({reference})
-  if(!trx)return res.status(404).json({message:'Transaction not found'})
+        // Call Paystack Utility to check real status
+        const paystackRes = await verifyPayment(reference);
+        
+        if (paystackRes.error) {
+            return res.status(400).json({ message: "Verification request failed", error: paystackRes.error });
+        }
 
-  trx.status=status
-  await trx.save()
+        const paystackStatus = paystackRes.data.status; // e.g., 'success' or 'abandoned'
 
-  return res.json({message:'Payment verified',status})
- }catch(err){
-  return res.status(500).json({message:'Server error',error:err.message})
- }
-}
+        // Find the record in your database
+        const trx = await Transaction.findOne({ reference });
+        if (!trx) {
+            return res.status(404).json({ message: 'Transaction record not found in database' });
+        }
+
+        // Update database with the latest status from Paystack
+        trx.status = paystackStatus;
+        await trx.save();
+
+        // Return status to your Frontend (paymentSuccess.jsx)
+        return res.json({ 
+            status: paystackStatus,
+            data: paystackRes.data 
+        });
+
+    } catch (err) {
+        console.error("Verify Error:", err.message);
+        return res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};

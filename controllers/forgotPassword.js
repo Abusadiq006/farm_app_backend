@@ -17,7 +17,13 @@ exports.forgotPassword = async(req, res) => {
         }
 
         // 3. Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000)
+        const code = Math.floor(100000 + Math.random() * 900000)
+
+        const hashedOtp = crypto.createHash('sha256').update(code).digest('hex')
+
+        console.log("SENDING OTP:", code) // Check email and this log match
+        console.log("DB HASH (Save):", hashedOtp) // Log the hash that is saved
+        // ... (rest of the code to save to DB and send email)
 
         // 4. Save OTP + expiry in DB
         user.resetOtp = otp

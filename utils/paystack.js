@@ -1,26 +1,37 @@
-const axios=require('axios')
+const axios = require('axios');
 
-exports.initializePayment=async(data) => {
+const initializePayment = async (form) => {
     try {
         const response = await axios.post(
-            'https://api.paystack.co/transaction/initialize',
-            data,
-            {headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`}}
-        )
-        return response=data
-    }catch(err) {
-        return {error:err.response?.data||err.message}
+            'https://api.paystack.co/transaction/initialize', 
+            form, 
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        return { error: error.response?.data || error.message };
     }
-}
+};
 
-exports.verifyPayment=async(reference)=>{
+const verifyPayment = async (reference) => {
     try {
-        const response=await axios.get (
-            `https://api.paystack.co/transaction/verify/${reference}`,
-            {headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`}}
-        )
-        return response.data
-    }catch(err){
-        return {error:err.response?.data||err.message}
+        const response = await axios.get(
+            `https://api.paystack.co/transaction/verify/${reference}`, 
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        return { error: error.response?.data || error.message };
     }
-}
+};
+
+module.exports = { initializePayment, verifyPayment };

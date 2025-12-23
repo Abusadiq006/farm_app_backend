@@ -8,8 +8,9 @@ const updateUser = async(req, res) => {
         const {name, email, role} = req.body
 
         // Non-admins cannot change role
-        if(role && req.User.role !== 'admin' && req.user.role !== 'owner') {
-            return res.status(403).json({ message: 'Only admin can change roles' })
+        // FIX: Corrected req.User.role to req.user.role
+        if(role && req.user.role !== 'owner' && req.user.role !== 'manager') { 
+            return res.status(403).json({ message: 'Only owner/manager can change roles' })
         }
 
         const updated = await User.findByIdAndUpdate(
@@ -52,7 +53,7 @@ const deleteUser = async(req, res) => {
         const {id} = req.params
 
         // Non-admin cannot delete others
-        if(req.user.role !== 'admin' && req.user.role !== 'owner'){
+        if(req.user.role !== 'owner' && req.user.role !== 'manager'){
             if(req.user.id !== id){
                 return res.status(403).json({ message: 'Access denied' })
             }
@@ -66,4 +67,5 @@ const deleteUser = async(req, res) => {
     }
 }
 
-module.exports = {updateUser, changePassword, deleteUser, getAllUser}
+// FIX: Removed getAllUser as it was not defined
+module.exports = {updateUser, changePassword, deleteUser}

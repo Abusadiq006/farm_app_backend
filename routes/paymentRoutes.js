@@ -1,8 +1,8 @@
-const express=require('express')
-const router=express.Router()
-const{initPayment,verifyPay}=require('../controllers/paymentController')
+const express = require('express')
+const router = express.Router()
+const paymentController = require('../controllers/paymentController')
 
-router.post('/init',initPayment)
-router.get('/verify/:reference',verifyPay)
+router.post('/init', paymentController.initPayment)
+router.get('/verify/:reference', paymentController.verifyPay)
 
-module.exports=router
+module.exports = router

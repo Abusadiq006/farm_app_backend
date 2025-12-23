@@ -1,35 +1,51 @@
 const User = require('../models/User')
-const Otp = require('../models/otpModel')
+const Otp = require('../models/otpModel') // New: Import Otp model
 const sendEmail = require('../utils/sendEmail')
-const crypto = require('crypto')
+const crypto = require('crypto') // New: Import crypto for hashing
 
-exports.forgotpassword = async (req, res) => {
-    try{
-        const{email} = req.body
+exports.forgotPassword = async(req, res) => {
+    try {
+        const { email } = req.body
 
+        // 1. Check if email is provided
+        if(!email){
+            return res.status(400).json({ message:"Email is required" })
+        }
+
+        // 2. Check if user exists
         const user = await User.findOne({ email })
-        if(!user) return res.status(404).json({ message: 'Email not found '})
+        if(!user){
+            return res.status(404).json({ message:"User not found" })
+        }
 
-            const code = Math.floor( 100000 + Math.random() * 900000 ).toString()
+        // 3. Generate 6-digit OTP
+        const code = Math.floor(100000 + Math.random() * 900000).toString()
 
-            const hashedOtp = crypto.createHash('sha256').update(code).digest('hex')
+        // 4. Hash OTP and Save/Update OTP in DB
+        const hashedOtp = crypto.createHash('sha256').update(code).digest('hex')
+        
+        await Otp.deleteMany({email}) // Clear any previous OTPs
 
-            await Otp.deleteMany({email})
+        await Otp.create({
+            email,
+            otp: hashedOtp,
+            expireAt: Date.now() + 10 * 60 * 1000 // valid for 10 minutes
+        })
 
-            await Otp.create({
-                email,
-                otp: hashedOtp,
-                expireAt: Data.now() + 5 * 60 * 1000
-            })
+        // 5. Send OTP to email
+        await sendEmail({
+            to: user.email,
+            subject: "Your Password Reset OTP",
+            text: `Your OTP is: ${code}`
+        })
 
-            await sendEmail ({
-                to: email,
-                subject: 'Your OTP Code',
-                text: `Your password reset OTP is: ${code}`
-            })
+        // 6. Response
+        res.json({ message:"OTP sent successfully" })
 
-            return res.json({ message: 'OTP sent successfully' })
-    } catch(err) {
-        return res.status(500).json({ message: 'Server error'})
+    } catch (err) {
+        res.status(500).json({
+            message:"Server error",
+            error: err.message
+        })
     }
 }

@@ -5,15 +5,17 @@ const { loginUser } = require('../controllers/authController')
 const auth = require('../middleware/authMiddleware')
 const role = require('../middleware/roleMiddleware')
 
-const router = require('express').Router()
+// Use express.Router() from the imported express module
+const router = express.Router()
 const {forgotPassword} = require('../controllers/forgotPassword')
 const {verifyOtp} = require('../controllers/verifyOtp')
 const {resetPassword} = require('../controllers/resetPassword')
 
 // PROTECTED ROUTES
 
-// Admin-only route (role-based access)
-router.get('/admin-only', auth, role(['owner','admin']), (req,res)=>{
+// Manager/Owner-only route (role-based access)
+// FIX: Changed 'admin' to 'manager' to match the User model's enum
+router.get('/admin-only', auth, role(['owner','manager']), (req,res)=>{ 
   res.json({
     message:'Admin route accessed',
     user:req.user
