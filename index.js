@@ -5,7 +5,12 @@ const paymentRoutes = require('./routes/paymentRoutes')
 const cors = require('cors')
 require('dotenv').config()
 
+const mongoose = require('mongoose')
 const app = express()
+
+mongoose.connect(process.env.MONGODB_URL)
+.then(() => console.log("Connected to MongoDB Atlas!"))
+.catch(err => console.error("Cloud DB Connection Error:", err))
 
 // Updated CORS methods
 app.use(cors({
