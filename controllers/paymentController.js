@@ -78,3 +78,7 @@ exports.verifyPay = async (req, res) => {
         return res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
+
+const callback_url = process.env.NODE_ENV === 'production'
+? 'https://farmapp.vercel.com/payment-success'
+: 'http://localhost:5173/payment-success'
