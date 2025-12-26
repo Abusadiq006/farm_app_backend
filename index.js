@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URL)
 
 // Updated CORS methods
 app.use(cors({
-  origin:'http://localhost:5173',
+  origin:'https://farm-app-backend-eh3r.onrender.com/',
   methods:['GET','POST','PUT','DELETE','PATCH'] 
 }))
 app.use(express.json())
@@ -36,15 +36,17 @@ app.listen(PORT, () => {
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://farmapp.vercel.app'
+  'https://farm-app-iota-livid.vercel.app'
 ]
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  }
+   if (!origin) return callback(null, true)
+   if (allowedOrigins.indexOf(origin) === -1) {
+     const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
+     return callback(new Error(msg), false)
+   }
+   return callback(null, true)
+  },
+  credentials: true
 }))

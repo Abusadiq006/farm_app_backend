@@ -80,5 +80,5 @@ exports.verifyPay = async (req, res) => {
 };
 
 const callback_url = process.env.NODE_ENV === 'production'
-? 'https://farmapp.vercel.com/payment-success'
+? 'https://farm-app-iota-livid.vercel.app//payment-success'
 : 'http://localhost:5173/payment-success'
